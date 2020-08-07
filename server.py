@@ -8,13 +8,15 @@ import re
 class Server():
 	
 	def __init__(self):
-
-		self.HOST_ADRESS = "192.168.1.202"
+		self.HOST_ADRESS = socket.gethostbyname(socket.gethostname())
+		# self.HOST_ADRESS = "192.168.0.112"
 		self.PORT = 4444
 		self.HEADER_LENGTH = 50
 		self.MAX_CONNECTION = 10
 		self.current_directory = "./Local_server_files"
 		self.Instruction_Length = 12
+		self.MAX_SIZE_MB = 256
+		self.MAX_SIZE = self.MAX_SIZE_MB*1024*1024
 
 	def Start_server(self):
 
@@ -25,19 +27,32 @@ class Server():
 		self.Server_Socket.listen(self.MAX_CONNECTION)
 
 	def Send_requested_file(self, Client_socket):
-	
 		file_name_length = int(Client_socket.recv(self.HEADER_LENGTH).decode('utf-8').strip())
 		print(f"file name length: {file_name_length}")
 		file_name = Client_socket.recv(file_name_length).decode('utf-8').strip()
 		print(f"file_name: {file_name}")
 		print(f"{file_name} is requested to download")
 		f = open(self.current_directory+"/"+file_name, 'rb')
-		file_data = f.read()
-		file_length = len(file_data)
-		print(f"size of file {file_length//(1024*1024)} MB!")
-		print(f"length of data we are gonna send: {len(file_data)}")
-		Client_socket.send(bytes(f"{file_length:<{self.HEADER_LENGTH}}", "utf-8"))
-		Client_socket.send(file_data)
+
+		file_size = os.stat(self.current_directory+"/"+file_name).st_size
+		Client_socket.send(bytes(f"{file_size:<{self.HEADER_LENGTH}}", "utf-8"))
+
+		print(f"size of file {file_size//(1024*1024)} MB!")
+		Total_data_send = 0
+		for segments in range (file_size//self.MAX_SIZE):
+			file_data = f.read(self.MAX_SIZE)
+			# print(f"length of data we are gonna send: {len(file_data)//(1024*1024)} MB")
+			Client_socket.send(file_data)
+			Total_data_send += self.MAX_SIZE
+			print(f"Data Sent: {Total_data_send//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
+
+		if file_size % self.MAX_SIZE != 0:
+			file_data = f.read(file_size%self.MAX_SIZE)
+			# print(f"length of data we are gonna send: {len(file_data)//(1024*1024)} MB")
+			Client_socket.send(file_data)
+			Total_data_send += len(file_data)
+			print(f"Data Sent: {Total_data_send//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
+
 		f.close()
 		print(f"{file_name} has been sent!")
 

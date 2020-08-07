@@ -18,13 +18,15 @@ import select
 class Client:
 
 	def __init__(self):
-		self.HOST_ADRESS = "192.168.1.202"
+		self.HOST_ADRESS = socket.gethostbyname(socket.gethostname())
+		# self.HOST_ADRESS = "192.168.0.112"
 		self.PORT = 4444
 		self.HEADER_LENGTH = 50
 		self.current_directory = "./Local_server_files"
 		self.previous_directory = ["./Local_server_files"]
 		self.file_list = []
-
+		self.MAX_SIZE_MB = 256
+		self.MAX_SIZE = self.MAX_SIZE_MB*1024*1024
 
 	def Connect_to_server(self):
 		self.Client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -41,21 +43,79 @@ class Client:
 		self.Client_socket.send(bytes(f"{len(file_name):<{self.HEADER_LENGTH}}", 'utf-8'))
 		self.Client_socket.send(bytes(file_name, 'utf-8'))
 		print(f"{file_name} request sent to server")
-		receivable_file_length = int(self.Client_socket.recv(self.HEADER_LENGTH).decode('utf-8').strip())
-		print(f"receivable_file_length: {receivable_file_length//(1024*1024)} MB")
-		f = open("copy_"+file_name, "wb")
-		received_file_length = 0
-		t0 = time.time()
-		while(receivable_file_length > received_file_length):
-			received_data = self.Client_socket.recv(receivable_file_length)
-			length_recevied_data = len(received_data)
-			t1 = time.time()
-			if (t1-t0>1000):
-				print(f"length of data received: {received_file_length//(1024*1024):>6} MB/{receivable_file_length//(1024*1024):>6} MB", end="\r")
-				t0 = t1
-			received_file_length += length_recevied_data
+		file_size = int(self.Client_socket.recv(self.HEADER_LENGTH).decode('utf-8').strip())
+		print(f"receivable_file_length: {file_size//(1024*1024)} MB")
+		
+		f = open("download_"+file_name, "wb")
+		total_data_received = 0
+		for segments in range (file_size//self.MAX_SIZE):
+			received_data = self.Client_socket.recv(self.MAX_SIZE)
+			# print(f"Length of data received: {len(received_data)//(1024*1024)} MB")
 			f.write(received_data)
+			total_data_received += self.MAX_SIZE
+			print(f"Data Received: {total_data_received//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
+
+		if file_size % self.MAX_SIZE != 0:
+			received_data = self.Client_socket.recv(file_size%self.MAX_SIZE)
+			# print(f"Length of data received: {len(received_data)//(1024*1024)} MB")
+			f.write(received_data)
+			total_data_received += len(received_data)
+			print(f"Data Received: {total_data_received//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
 		f.close()
+
+		print(f"{file_name} successfully received!")
+		
+	# def Download_file(self):
+	# 	for i in range (len(self.file_list)):
+	# 		print((i+1), self.file_list[i])
+
+	# 	file_name = self.file_list[int(input("Enter The Number Corresponding to the file name: "))-1]
+	# 	print(f"redirecting {file_name} to function Download_file")
+	# 	#Send an indicator to prepare server to send file
+	# 	self.Client_socket.send(bytes("Instruction1", 'utf-8'))
+	# 	self.Client_socket.send(bytes(f"{len(file_name):<{self.HEADER_LENGTH}}", 'utf-8'))
+	# 	self.Client_socket.send(bytes(file_name, 'utf-8'))
+	# 	print(f"{file_name} request sent to server")
+	# 	receivable_file_length = int(self.Client_socket.recv(self.HEADER_LENGTH).decode('utf-8').strip())
+	# 	print(f"receivable_file_length: {receivable_file_length//(1024*1024)} MB")
+		
+	# 	received_file_length = 0
+	# 	t0 = time.time()
+	# 	while(receivable_file_length > received_file_length):
+	# 		f = open("copy_"+file_name, "wb")
+	# 		received_data = self.Client_socket.recv(receivable_file_length)
+
+	# 		length_recevied_data = len(received_data)
+	# 		t1 = time.time()
+	# 		if (t1-t0>1):
+	# 			print(f"length of data received: {received_file_length//(1024*1024):>6} MB/{receivable_file_length//(1024*1024):>6} MB", end="\r")
+	# 			t0 = t1
+	# 		received_file_length += length_recevied_data
+	# 		f.write(received_data)
+	# 		f.close()
+	# 	print(f"{file_name} successfully received!")
+
+		# while(True):
+		# 	try:
+		# 		received_data = self.Client_socket.recv(receivable_file_length)
+		# 		length_recevied_data = len(received_data)
+		# 		t1 = time.time()
+		# 		if (t1-t0>1):
+		# 			print(f"length of data received: {received_file_length//(1024*1024):>6} MB/{receivable_file_length//(1024*1024):>6} MB", end="\r")
+		# 			t0 = t1
+		# 		received_file_length += length_recevied_data
+		# 		f.write(received_data)
+		# 	except:
+		# 		break
+		
+		# print(f"{file_name} successfully received!")
+		# f.close()
+
+
+
+
+
+
 
 	def Upload_file(self):
 		#Send an indicator to prepare server to receive file

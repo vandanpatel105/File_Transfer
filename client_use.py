@@ -1,30 +1,29 @@
 from client import Client
 import signal
 import time
-
-# try:
-#     loop_forever()
-# except Exception as exc:
-#     print(exc)
+import sys
 
 client = Client()
+client.HOST_ADDRESS = input("Enter Server IP: ")
 
-# def Start_client_and_talk_to_server(PORT_NO):
+
+for i in range (1, len(sys.argv)):
+#--PORT=
+#--IP=
+#--CONNECTIONS=
+
+
+	if sys.argv[i][:5] == "--IP=":
+		client.HOST_ADDRESS = sys.argv[i][5:]
+	elif sys.argv[i][:7] == "--PORT=":
+		client.PORT = int(sys.argv[i][7:])
+	else:
+		print("Invalid Argument")
+
 def Start_client_and_talk_to_server():
 	
-	# try:
-	# client.PORT = PORT_NO
-	# try:
 	client.Connect_to_server()
 	print("Succesfully connected")
-	# except:
-	# 	print("Not Possible")
-	# 	print("Trying again with different port")
-	# 	print(f"Current Client Port {client.PORT}")
-	# 	client.PORT = client.PORT + 1
-	# 	print(client.PORT)
-	# 	client.Connect_to_server()
-	
 	
 	while True:
 
@@ -69,8 +68,5 @@ def Start_client_and_talk_to_server():
 
 		else:
 			print("please enter correct number!")
-
-# signal.signal(signal.SIGALRM, Start_client_and_talk_to_server)
-# signal.alarm(5)
 
 Start_client_and_talk_to_server()

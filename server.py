@@ -8,8 +8,11 @@ import re
 class Server():
 	
 	def __init__(self):
-		self.HOST_ADRESS = socket.gethostbyname(socket.gethostname())
-		# self.HOST_ADRESS = "192.168.0.112"
+		os.system("ipconfig >> IpDetails.txt")
+		with open("IpDetails.txt") as f:
+			self.HOST_ADDRESS = f.read().split("Wireless LAN adapter Wi-Fi:")[1].split("\n")[4].split(":")[1].strip()
+		# self.HOST_ADDRESS = socket.gethostbyname(socket.gethostname())
+		# self.HOST_ADDRESS = "192.168.0.111"
 		self.PORT = 4444
 		self.HEADER_LENGTH = 50
 		self.MAX_CONNECTION = 10
@@ -23,8 +26,10 @@ class Server():
 		self.Server_Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.Server_Socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-		self.Server_Socket.bind((self.HOST_ADRESS, self.PORT))
+		self.Server_Socket.bind((self.HOST_ADDRESS, self.PORT))
 		self.Server_Socket.listen(self.MAX_CONNECTION)
+
+		print(f"Server is running on {self.HOST_ADDRESS}:{self.PORT}")
 
 	def Send_requested_file(self, Client_socket):
 		file_name_length = int(Client_socket.recv(self.HEADER_LENGTH).decode('utf-8').strip())
@@ -32,28 +37,37 @@ class Server():
 		file_name = Client_socket.recv(file_name_length).decode('utf-8').strip()
 		print(f"file_name: {file_name}")
 		print(f"{file_name} is requested to download")
-		f = open(self.current_directory+"/"+file_name, 'rb')
 
-		file_size = os.stat(self.current_directory+"/"+file_name).st_size
-		Client_socket.send(bytes(f"{file_size:<{self.HEADER_LENGTH}}", "utf-8"))
 
-		print(f"size of file {file_size//(1024*1024)} MB!")
-		Total_data_send = 0
-		for segments in range (file_size//self.MAX_SIZE):
-			file_data = f.read(self.MAX_SIZE)
-			# print(f"length of data we are gonna send: {len(file_data)//(1024*1024)} MB")
-			Client_socket.send(file_data)
-			Total_data_send += self.MAX_SIZE
-			print(f"Data Sent: {Total_data_send//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
+		# if file is a file
+		if os.path.isdir(self.current_directory+"/"+file_name) == False:
+			f = open(self.current_directory+"/"+file_name, 'rb')
 
-		if file_size % self.MAX_SIZE != 0:
-			file_data = f.read(file_size%self.MAX_SIZE)
-			# print(f"length of data we are gonna send: {len(file_data)//(1024*1024)} MB")
-			Client_socket.send(file_data)
-			Total_data_send += len(file_data)
-			print(f"Data Sent: {Total_data_send//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
+			file_size = os.stat(self.current_directory+"/"+file_name).st_size
+			Client_socket.send(bytes(f"{file_size:<{self.HEADER_LENGTH}}", "utf-8"))
 
-		f.close()
+			print(f"size of file {file_size//(1024*1024)} MB!")
+			Total_data_send = 0
+			for segments in range (file_size//self.MAX_SIZE):
+				file_data = f.read(self.MAX_SIZE)
+				# print(f"length of data we are gonna send: {len(file_data)//(1024*1024)} MB")
+				Client_socket.send(file_data)
+				Total_data_send += self.MAX_SIZE
+				print(f"Data Sent: {Total_data_send//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
+
+			if file_size % self.MAX_SIZE != 0:
+				file_data = f.read(file_size%self.MAX_SIZE)
+				# print(f"length of data we are gonna send: {len(file_data)//(1024*1024)} MB")
+				Client_socket.send(file_data)
+				Total_data_send += len(file_data)
+				print(f"Data Sent: {Total_data_send//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
+
+			f.close()
+		#if file is a folder
+		else:
+			
+			time.sleep(1)
+		
 		print(f"{file_name} has been sent!")
 
 	def Receive_file(self, Client_socket):

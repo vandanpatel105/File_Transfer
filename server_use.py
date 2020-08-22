@@ -1,5 +1,6 @@
 import threading
 from server import Server
+import sys
 
 #Download       -   Instruction1
 #Upload         -   Instruction2
@@ -12,7 +13,7 @@ from server import Server
 #file list      -   Instruction6
 #Search			-	Instruction7
 
-def start_responding(Client_socket ,Client_Adress):
+def start_responding(Client_socket ,Client_Address):
 
 	while True:
 		current_directory = "./Local_server_files"
@@ -21,7 +22,6 @@ def start_responding(Client_socket ,Client_Adress):
 		Instruction = Client_socket.recv(server.Instruction_Length).decode('utf-8').strip()
 		# print(Instruction)
 		if Instruction == "Instruction1":
-			
 			server.Send_requested_file(Client_socket)
 
 		elif Instruction == "Instruction2":
@@ -46,16 +46,30 @@ def start_responding(Client_socket ,Client_Adress):
 			server.Return_search(Client_socket)
 
 server = Server()
+# for i in range (1, len(sys.argv)):
+# #--PORT=
+# #--IP=
+# #--CONNECTIONS=
+
+
+# 	if sys.argv[i][:5] == "--IP=":
+# 		server.HOST_ADDRESS = sys.argv[i][5:]
+# 	elif sys.argv[i][:7] == "--PORT=":
+# 		server.PORT = int(sys.argv[i][7:])
+# 	elif sys.argv[i][:14] == "--CONNECTIONS":
+# 		server.MAX_CONNECTION = int(sys.argv[i][14:])
+# 	else:
+# 		print("Invalid Argument")
+
 server.Start_server()
 
 Connections = 3
 while True:
 	try:
-		print("we are in the while loop")
 		print("trying to connect to clients")
-		Client_socket, Client_Adress = server.Server_Socket.accept()
-		print(f"Connection has been established with {Client_Adress}")
-		threading._start_new_thread(start_responding, (Client_socket, Client_Adress))
+		Client_socket, Client_Address = server.Server_Socket.accept()
+		print(f"Connection has been established with {Client_Address}")
+		threading._start_new_thread(start_responding, (Client_socket, Client_Address))
 
 	except KeyboardInterrupt as e:
 		print(f"Gradually shutting down the server")

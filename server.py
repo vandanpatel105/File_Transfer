@@ -44,21 +44,21 @@ class Server():
 			f = open(self.current_directory+"/"+file_name, 'rb')
 
 			file_size = os.stat(self.current_directory+"/"+file_name).st_size
-			Client_socket.send(bytes(f"{file_size:<{self.HEADER_LENGTH}}", "utf-8"))
+			Client_socket.sendall(bytes(f"{file_size:<{self.HEADER_LENGTH}}", "utf-8"))
 
 			print(f"size of file {file_size//(1024*1024)} MB!")
 			Total_data_send = 0
 			for segments in range (file_size//self.MAX_SIZE):
 				file_data = f.read(self.MAX_SIZE)
 				# print(f"length of data we are gonna send: {len(file_data)//(1024*1024)} MB")
-				Client_socket.send(file_data)
+				Client_socket.sendall(file_data)
 				Total_data_send += self.MAX_SIZE
 				print(f"Data Sent: {Total_data_send//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
 
 			if file_size % self.MAX_SIZE != 0:
 				file_data = f.read(file_size%self.MAX_SIZE)
 				# print(f"length of data we are gonna send: {len(file_data)//(1024*1024)} MB")
-				Client_socket.send(file_data)
+				Client_socket.sendall(file_data)
 				Total_data_send += len(file_data)
 				print(f"Data Sent: {Total_data_send//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
 
@@ -101,10 +101,10 @@ class Server():
 		print(f"{file_name} is requested to be deleted")
 		try:
 			os.remove(os.path.join(self.current_directory, file_name))
-			Client_socket.send(b'1')
+			Client_socket.sendall(b'1')
 			print(f"{file_name} Successfully removed")
 		except:
-			Client_socket.send(b'0')
+			Client_socket.sendall(b'0')
 			print(f"can not remove {file_name}")
 
 	def Rename_file(self, Client_socket):
@@ -120,11 +120,11 @@ class Server():
 
 		try:
 			os.rename(os.path.join(self.current_directory, file_name), os.path.join(self.current_directory, new_name))
-			Client_socket.send(b'1')
+			Client_socket.sendall(b'1')
 			print(f"{file_name} successfully renamed to {new_name}!")
 
 		except:
-			Client_socket.send(b'0')
+			Client_socket.sendall(b'0')
 			print(f"Could not rename {file_name}!")
 
 	# def Move_file(Client_socket,)
@@ -138,8 +138,8 @@ class Server():
 		file_list = os.listdir(file_name)
 		# print(f"file List: {file_list}")
 		pickled_file_list = pickle.dumps(file_list)
-		Client_socket.send(bytes(f"{len(pickled_file_list):<{self.HEADER_LENGTH}}", 'utf-8'))
-		Client_socket.send(pickled_file_list)
+		Client_socket.sendall(bytes(f"{len(pickled_file_list):<{self.HEADER_LENGTH}}", 'utf-8'))
+		Client_socket.sendall(pickled_file_list)
 
 	def Search_(self, current_directory, reg_ex_string):
 	
@@ -165,6 +165,6 @@ class Server():
 		search_list = self.Search_(current_directory, reg_ex_string)
 
 		pickled_search_list = pickle.dumps(search_list)
-		Client_socket.send(bytes(f"{len(pickled_search_list):<{self.HEADER_LENGTH}}", 'utf-8'))
-		Client_socket.send(pickled_search_list)
+		Client_socket.sendall(bytes(f"{len(pickled_search_list):<{self.HEADER_LENGTH}}", 'utf-8'))
+		Client_socket.sendall(pickled_search_list)
 	

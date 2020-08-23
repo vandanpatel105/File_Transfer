@@ -39,9 +39,9 @@ class Client:
 		file_name = self.file_list[int(input("Enter The Number Corresponding to the file name: "))-1]
 		print(f"redirecting {file_name} to function Download_file")
 		#Send an indicator to prepare server to send file
-		self.Client_socket.send(bytes("Instruction1", 'utf-8'))
-		self.Client_socket.send(bytes(f"{len(file_name):<{self.HEADER_LENGTH}}", 'utf-8'))
-		self.Client_socket.send(bytes(file_name, 'utf-8'))
+		self.Client_socket.sendall(bytes("Instruction1", 'utf-8'))
+		self.Client_socket.sendall(bytes(f"{len(file_name):<{self.HEADER_LENGTH}}", 'utf-8'))
+		self.Client_socket.sendall(bytes(file_name, 'utf-8'))
 		print(f"{file_name} request sent to server")
 		filetype = 0
 		#if file is a file
@@ -75,20 +75,20 @@ class Client:
 
 	def Upload_file(self):
 		#Send an indicator to prepare server to receive file
-		self.Client_socket.send(bytes("Instruction2", 'utf-8'))
+		self.Client_socket.sendall(bytes("Instruction2", 'utf-8'))
 		#File Path will be entered using Tkinter
 		file_name = "The_Social_Network.mkv"
 		file_name_with_path = "./The_Social_Network.mkv"
-		self.Client_socket.send(bytes(f"{len(file_name):<{self.HEADER_LENGTH}}", 'utf-8'))
-		self.Client_socket.send(bytes(file_name, 'utf-8'))
+		self.Client_socket.sendall(bytes(f"{len(file_name):<{self.HEADER_LENGTH}}", 'utf-8'))
+		self.Client_socket.sendall(bytes(file_name, 'utf-8'))
 		print(f"{file_name} is requested to upload")
 		f = open(self.current_directory+"/"+file_name, 'rb')
 		file_data = f.read()
 		file_length = len(file_data)
 		print(f"size of file {file_length//(1024*1024)} MB!")
 		print(f"length of data we are gonna send: {len(file_data)}")
-		self.Client_socket.send(bytes(f"{file_length:<{self.HEADER_LENGTH}}", "utf-8"))
-		self.Client_socket.send(file_data)
+		self.Client_socket.sendall(bytes(f"{file_length:<{self.HEADER_LENGTH}}", "utf-8"))
+		self.Client_socket.sendall(file_data)
 		f.close()
 		print(f"{file_name} has been sent!")
 
@@ -97,9 +97,9 @@ class Client:
 			print((i+1), self.file_list[i])
 
 		file_name = self.file_list[int(input())-1]
-		self.Client_socket.send(bytes("Instruction3", 'utf-8'))
-		self.Client_socket.send(bytes(f"{len(file_name):>{self.HEADER_LENGTH}}", 'utf-8'))
-		self.Client_socket.send(bytes(file_name, 'utf-8'))
+		self.Client_socket.sendall(bytes("Instruction3", 'utf-8'))
+		self.Client_socket.sendall(bytes(f"{len(file_name):>{self.HEADER_LENGTH}}", 'utf-8'))
+		self.Client_socket.sendall(bytes(file_name, 'utf-8'))
 
 		success = self.Client_socket.recv(1)
 		if success == b'1':
@@ -114,11 +114,11 @@ class Client:
 		file_name = self.file_list[int(input())-1]
 		new_name = input("Please enter renamed name: ")
 
-		self.Client_socket.send(bytes("Instruction4", 'utf-8'))
-		self.Client_socket.send(bytes(f"{len(file_name):>{self.HEADER_LENGTH}}", 'utf-8'))
-		self.Client_socket.send(bytes(file_name, 'utf-8'))
-		self.Client_socket.send(bytes(f"{len(new_name):>{self.HEADER_LENGTH}}", 'utf-8'))
-		self.Client_socket.send(bytes(new_name, 'utf-8'))
+		self.Client_socket.sendall(bytes("Instruction4", 'utf-8'))
+		self.Client_socket.sendall(bytes(f"{len(file_name):>{self.HEADER_LENGTH}}", 'utf-8'))
+		self.Client_socket.sendall(bytes(file_name, 'utf-8'))
+		self.Client_socket.sendall(bytes(f"{len(new_name):>{self.HEADER_LENGTH}}", 'utf-8'))
+		self.Client_socket.sendall(bytes(new_name, 'utf-8'))
 		
 		success = self.Client_socket.recv(1)
 		if success == b'1':
@@ -155,23 +155,23 @@ class Client:
 
 	def refresh_current_hiararcy(self):
 		# print("refresh_current_hiararcy Function")
-		self.Client_socket.send(bytes("Instruction6", 'utf-8'))
+		self.Client_socket.sendall(bytes("Instruction6", 'utf-8'))
 		# print("able to send first message")
-		self.Client_socket.send(bytes(f"{len(self.current_directory):>{self.HEADER_LENGTH}}", 'utf-8'))	
-		self.Client_socket.send(bytes(f"{self.current_directory}", 'utf-8'))
+		self.Client_socket.sendall(bytes(f"{len(self.current_directory):>{self.HEADER_LENGTH}}", 'utf-8'))	
+		self.Client_socket.sendall(bytes(f"{self.current_directory}", 'utf-8'))
 		list_data_length = int(self.Client_socket.recv(self.HEADER_LENGTH).decode('utf-8').strip())
 		self.file_list = pickle.loads(self.Client_socket.recv(list_data_length))
 
 	def Search(self):
 		print(f"{self.current_directory} is your current directory!")
 		string = input("please enter: ")
-		self.Client_socket.send(bytes("Instruction7", 'utf-8'))
+		self.Client_socket.sendall(bytes("Instruction7", 'utf-8'))
 		#Sending Current Directory
-		self.Client_socket.send(bytes(f"{len(self.current_directory):>{self.HEADER_LENGTH}}", 'utf-8'))	
-		self.Client_socket.send(bytes(f"{self.current_directory}", 'utf-8'))
+		self.Client_socket.sendall(bytes(f"{len(self.current_directory):>{self.HEADER_LENGTH}}", 'utf-8'))	
+		self.Client_socket.sendall(bytes(f"{self.current_directory}", 'utf-8'))
 		#Sending String
-		self.Client_socket.send(bytes(f"{len(string):>{self.HEADER_LENGTH}}", 'utf-8'))	
-		self.Client_socket.send(bytes(f"{string}", 'utf-8'))
+		self.Client_socket.sendall(bytes(f"{len(string):>{self.HEADER_LENGTH}}", 'utf-8'))	
+		self.Client_socket.sendall(bytes(f"{string}", 'utf-8'))
 		#Expecting Pickled List
 		list_data_length = int(self.Client_socket.recv(self.HEADER_LENGTH).decode('utf-8').strip())
 		Search_list = pickle.loads(self.Client_socket.recv(list_data_length))

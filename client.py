@@ -3,6 +3,8 @@ import pickle
 import time
 import os
 import select
+# import tqdm
+
 
 #Download       								-   Instruction1
 #Upload         								-   Instruction2
@@ -25,8 +27,8 @@ class Client:
 		self.current_directory = "./Local_server_files"
 		self.previous_directory = ["./Local_server_files"]
 		self.file_list = []
-		self.MAX_SIZE_MB = 256
-		self.MAX_SIZE = self.MAX_SIZE_MB*1024*1024
+		self.BUFFER = 4
+		self.MAX_SIZE = self.BUFFER*1024*1024
 
 	def Connect_to_server(self):
 		self.Client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -50,21 +52,56 @@ class Client:
 			print(f"receivable_file_length: {file_size//(1024*1024)} MB")
 			
 			f = open("download_"+file_name, "wb")
+			
+			# progress = tqdm.tqdm(range(file_size), f"Receiving {file_name}", unit="B", unit_scale=True, unit_divisor=self.MAX_SIZE/4)
+			# for _ in progress:
+			# 	# time.sleep(0.1)
+			# 	received_data = self.Client_socket.recv(self.MAX_SIZE)
+			# 	if not received_data:
+			# 		break
+			# 	f.write(received_data)
+			# 	progress.update(len(received_data))
+			
+			# total_data_received = 0
+			# for segments in range (file_size//self.MAX_SIZE):
+			# 	received_data = self.Client_socket.recv(self.MAX_SIZE)
+			# 	# print(f"Length of data received: {len(received_data)//(1024*1024)} MB")
+			# 	f.write(received_data)
+			# 	total_data_received += self.MAX_SIZE
+			# 	print(f"Data Received: {total_data_received//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
+
+			# if file_size % self.MAX_SIZE != 0:
+			# 	received_data = self.Client_socket.recv(file_size%self.MAX_SIZE)
+			# 	# print(f"Length of data received: {len(received_data)//(1024*1024)} MB")
+			# 	f.write(received_data)
+			# 	total_data_received += len(received_data)
+			# 	print(f"Data Received: {total_data_received//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
+
 			total_data_received = 0
 			for segments in range (file_size//self.MAX_SIZE):
-				received_data = self.Client_socket.recv(self.MAX_SIZE)
+
+				Client_socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+				Client_socket_.connect((self.HOST_ADDRESS, self.PORT+1+segments))
+
+				received_data = Client_socket_.recv(self.MAX_SIZE)
 				# print(f"Length of data received: {len(received_data)//(1024*1024)} MB")
+
 				f.write(received_data)
 				total_data_received += self.MAX_SIZE
 				print(f"Data Received: {total_data_received//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
 
 			if file_size % self.MAX_SIZE != 0:
-				received_data = self.Client_socket.recv(file_size%self.MAX_SIZE)
+				Client_socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+				Client_socket_.connect((self.HOST_ADDRESS, self.PORT+1+(file_size//self.MAX_SIZE)))
+
+				received_data = Client_socket_.recv(file_size%self.MAX_SIZE)
 				# print(f"Length of data received: {len(received_data)//(1024*1024)} MB")
 				f.write(received_data)
 				total_data_received += len(received_data)
 				print(f"Data Received: {total_data_received//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
+
 			f.close()
+
 
 			print(f"{file_name} successfully received!")
 		

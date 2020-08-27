@@ -4,6 +4,7 @@ import pickle
 import select
 import time
 import re
+# import tqdm
 
 class Server():
 	
@@ -18,8 +19,8 @@ class Server():
 		self.MAX_CONNECTION = 10
 		self.current_directory = "./Local_server_files"
 		self.Instruction_Length = 12
-		self.MAX_SIZE_MB = 256
-		self.MAX_SIZE = self.MAX_SIZE_MB*1024*1024
+		self.BUFFER = 4
+		self.MAX_SIZE = self.BUFFER*1024*1024
 
 	def Start_server(self):
 
@@ -38,7 +39,6 @@ class Server():
 		print(f"file_name: {file_name}")
 		print(f"{file_name} is requested to download")
 
-
 		# if file is a file
 		if os.path.isdir(self.current_directory+"/"+file_name) == False:
 			f = open(self.current_directory+"/"+file_name, 'rb')
@@ -47,17 +47,57 @@ class Server():
 			Client_socket.sendall(bytes(f"{file_size:<{self.HEADER_LENGTH}}", "utf-8"))
 
 			print(f"size of file {file_size//(1024*1024)} MB!")
+			
+			# progress = tqdm.tqdm(range(file_size), f"Sending {file_name}", unit="B", unit_scale=True, unit_divisor=self.MAX_SIZE/4)
+			# for _ in progress:
+			# 	# time.sleep(0.1)
+			# 	file_data = f.read(self.MAX_SIZE)
+			# 	if not file_data:
+			# 		break
+			# 	Client_socket.sendall(file_data)
+			# 	progress.update(len(file_data))
+		
+			# Total_data_send = 0
+			# for segments in range (file_size//self.MAX_SIZE):
+			# 	file_data = f.read(self.MAX_SIZE)
+			# 	# print(f"length of data we are gonna send: {len(file_data)//(1024*1024)} MB")
+			# 	Client_socket.sendall(file_data)
+			# 	Total_data_send += self.MAX_SIZE
+			# 	print(f"Data Sent: {Total_data_send//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
+
+			# if file_size % self.MAX_SIZE != 0:
+			# 	file_data = f.read(file_size%self.MAX_SIZE)
+			# 	# print(f"length of data we are gonna send: {len(file_data)//(1024*1024)} MB")
+			# 	Client_socket.sendall(file_data)
+			# 	Total_data_send += len(file_data)
+			# 	print(f"Data Sent: {Total_data_send//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
+			
+			
 			Total_data_send = 0
 			for segments in range (file_size//self.MAX_SIZE):
 				file_data = f.read(self.MAX_SIZE)
 				# print(f"length of data we are gonna send: {len(file_data)//(1024*1024)} MB")
-				Client_socket.sendall(file_data)
+	
+				Server_Socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+				Server_Socket_.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+				Server_Socket_.bind((self.HOST_ADDRESS, self.PORT+1+segments))
+				Server_Socket_.listen(1)
+				Client_socket_, Client_Address_ = Server_Socket_.accept()
+				Client_socket_.sendall(file_data)
+				Server_Socket_.close()
 				Total_data_send += self.MAX_SIZE
 				print(f"Data Sent: {Total_data_send//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
 
 			if file_size % self.MAX_SIZE != 0:
 				file_data = f.read(file_size%self.MAX_SIZE)
 				# print(f"length of data we are gonna send: {len(file_data)//(1024*1024)} MB")
+				Server_Socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+				Server_Socket_.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+				Server_Socket_.bind((self.HOST_ADDRESS, self.PORT+1+(file_size//self.MAX_SIZE)))
+				Server_Socket_.listen(1)
+				Client_socket_, Client_Address_ = Server_Socket_.accept()
 				Client_socket.sendall(file_data)
 				Total_data_send += len(file_data)
 				print(f"Data Sent: {Total_data_send//(1024*1024)} MB/{file_size//(1024*1024)} MB", end = "\r")
